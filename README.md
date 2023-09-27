@@ -11,18 +11,20 @@ The directory should contain a pllr.json file, in the following format:
 {
   "items": [
     {
-      "get": "git clone https://github.com/left-pad/left-pad.git",
-      "source": "left-pad",
-      "build": "npm i && npm run test",
-      "assets": ["package.json", "perf"],
+      "name": "pllr",
+      "get": "git clone https://github.com/leakypixel/pllr.git",
+      "source": "pllr",
+      "build": "cargo build -r",
+      "assets": ["target/release/pllr"],
       "overwrite": true,
-      "dest": "lp",
+      "dest": "pllr",
       "children": [<Items>]
     }
   ]
 }
 ```
 
+* `name` is the name of the item, primarily for debug purposes.
 * `get` specifies the command to fetch resources. Will be run in a fresh temp directory.
 * `source` (optional) specifies the directory to change to before executing build commands or copying assets. This is
 relative to the temp build directory.
@@ -31,6 +33,11 @@ relative to the temp build directory.
 * `dest` (optional) specifies the directory to copy assets to (relative to and defaults to the root directory).
 * `overwrite` (optional) specifies whether to overwrite existing files when copying assets (default is false).
 * `children` (optional) is recursive list of items, with their root directory set to the dest of their parent.
+
+
+## Build
+
+Clone or download this repo, run `cargo build`.
 
 
 ## Motivation

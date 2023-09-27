@@ -4,10 +4,12 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path};
 use std::process::{Command, exit};
+use std::time::Instant;
 
 #[derive(serde::Deserialize, Debug)]
 struct Item {
     get: String,
+    name: Option<String>,
     build: Option<String>,
     assets: Vec<String>,
     overwrite: Option<bool>,
@@ -22,6 +24,10 @@ struct BuildConfig {
 }
 
 fn main() {
+    let version = env!("CARGO_PKG_VERSION");
+    let now = Instant::now();
+
+    println!("PLLR version {}", version);
     // Get the command-line argument (directory path)
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
@@ -58,16 +64,24 @@ fn main() {
             exit(1);
         }
     };
-
+    println!("Read in configuration from {}", pllr_json_path.display());
 
     // Recursively process the pllr.json configuration
     process_item(&build_config.items, &dir);
+
+    println!("Done in {} secs.", now.elapsed().as_secs());
 }
 
 fn process_item(items: &[Item], base_dir: &Path) {
     for item in items {
         let temp_dir = tempfile::tempdir().expect("Failed to create temp directory");
         let temp_dir_path = temp_dir.path();
+        let target_name = match &item.name {
+            Some(name) => name,
+            None => "<unnamed>",
+        };
+
+        println!("Building target {}", target_name);
 
         // Execute the "get" command in the temp directory
         let get_command = Command::new("sh")
@@ -111,6 +125,7 @@ fn process_item(items: &[Item], base_dir: &Path) {
         }
 
 
+        println!("Copying assets for target: {}", target_name);
         // Move assets to the specified dest directory
         let dest_dir = match &item.dest {
             Some(dest) => base_dir.join(dest),
@@ -151,6 +166,7 @@ fn process_item(items: &[Item], base_dir: &Path) {
                         exit(1);
                     }
                 }
+                println!("Copied {} to {}", asset_path.display(), dest_dir.display());
             } else {
                 println!("Skipping copy of {} because the file already exists and overwrite is set to false.", asset);
             }
@@ -158,6 +174,7 @@ fn process_item(items: &[Item], base_dir: &Path) {
 
         // Process children recursively
         if let Some(children) = &item.children {
+            println!("Processing children for target: {}", target_name);
             let child_base_dir = match &item.dest {
                 Some(dest) => base_dir.join(dest),
                 None => base_dir.to_owned(), // Use the base directory if no dest is specified
